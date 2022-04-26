@@ -3,10 +3,10 @@ use crossterm::{
     cursor::{Hide, MoveTo, RestorePosition, SavePosition, Show},
     execute,
     style::Print,
-    terminal::{size, Clear, ClearType},
+    terminal::{size, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
     Result,
 };
-use std::{io::stdout, thread, time};
+use std::{io::stdout, thread, time, sync::{Arc, Mutex}};
 
 mod steam;
 use steam::*;
@@ -55,10 +55,26 @@ fn main() -> Result<()> {
     let (cols, _) = size()?;
     let options = Options::parse();
 
-    execute!(stdout(), Clear(ClearType::All), Hide, SavePosition)?;
+    execute!(stdout(), EnterAlternateScreen, Hide, SavePosition)?;
+
+    let running = Arc::new(Mutex::new(true));
+
+    let state = Arc::clone(&running);
+    ctrlc::set_handler(move || {
+        *state.lock().expect("Running state error.") = false;
+        execute!(
+            stdout(),
+            Clear(ClearType::All),
+            RestorePosition,
+            Show,
+            LeaveAlternateScreen
+        )
+        .expect("Error handling Ctrl-C");
+    })
+    .expect("Error setting Ctrl-C handler");
 
     let mut x = cols as i32 - 1;
-    loop {
+    while *running.lock().expect("Running state error.") {
         if options.logo {
             if add_sl(x, options)? { break; }
         } else if options.c51 {
@@ -71,7 +87,7 @@ fn main() -> Result<()> {
         x -= 1;
     }
 
-    execute!(stdout(), RestorePosition, Show)?;
+    execute!(stdout(), RestorePosition, Show, LeaveAlternateScreen)?;
     Ok(())
 }
 
