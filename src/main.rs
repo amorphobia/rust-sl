@@ -1,7 +1,3 @@
-mod steam;
-
-use std::{io::stdout, thread, time};
-
 use clap::Parser;
 use crossterm::{
     cursor::{Hide, MoveTo, RestorePosition, SavePosition, Show},
@@ -10,18 +6,23 @@ use crossterm::{
     terminal::{size, Clear, ClearType},
     Result,
 };
+use std::{io::stdout, thread, time};
+
+mod steam;
 use steam::*;
 
 fn move_print(x: i32, y: i32, pat: &str) -> Result<()> {
     use std::cmp::{max, min};
 
     let (cols, rows) = size()?;
+    let cols = cols as i32;
+    let rows = rows as i32;
 
-    if x >= cols as i32 || y >= rows as i32 || y < 0 || x + (pat.len() as i32) < 0 {
+    if x >= cols || x + (pat.len() as i32) < 0 || y >= rows || y < 0 {
         return Ok(());
     }
 
-    let upper = min(pat.len(), (cols as i32 - x) as usize);
+    let upper = min(pat.len(), (cols - x) as usize);
     let lower = max(-x, 0) as usize;
 
     let pat = &pat[lower..upper];
@@ -59,17 +60,11 @@ fn main() -> Result<()> {
     let mut x = cols as i32 - 1;
     loop {
         if options.logo {
-            if add_sl(x, options)? {
-                break;
-            }
+            if add_sl(x, options)? { break; }
         } else if options.c51 {
-            if add_c51(x, options)? {
-                break;
-            }
+            if add_c51(x, options)? { break; }
         } else {
-            if add_d51(x, options)? {
-                break;
-            }
+            if add_d51(x, options)? { break; }
         }
 
         thread::sleep(time::Duration::from_millis(40));
@@ -77,7 +72,6 @@ fn main() -> Result<()> {
     }
 
     execute!(stdout(), RestorePosition, Show)?;
-
     Ok(())
 }
 
@@ -111,11 +105,8 @@ fn add_sl(x: i32, options: Options) -> Result<bool> {
     };
 
     for i in 0..=(LOGOHEIGHT as i32) {
-        move_print(
-            x,
-            y + i,
-            SL[((LOGOLENGTH as i32 + x) / 3 % LOGOPATTERNS as i32) as usize][i as usize],
-        )?;
+        let pat = SL[((LOGOLENGTH as i32 + x) / 3 % LOGOPATTERNS as i32) as usize][i as usize];
+        move_print(x, y + i, pat)?;
         move_print(x + 21, y + i + py1, COAL[i as usize])?;
         move_print(x + 42, y + i + py2, CAR[i as usize])?;
         move_print(x + 63, y + i + py3, CAR[i as usize])?;
@@ -130,39 +121,39 @@ fn add_sl(x: i32, options: Options) -> Result<bool> {
     }
 
     add_smoke(x + LOGOFUNNEL as i32, y - 1)?;
-
     Ok(false)
 }
 
 fn add_d51(x: i32, options: Options) -> Result<bool> {
     const D51: [[&str; D51HEIGHT + 1]; D51PATTERNS] = [
         [
-            D51STR1, D51STR2, D51STR3, D51STR4, D51STR5, D51STR6, D51STR7, D51WHL11, D51WHL12,
-            D51WHL13, D51DEL,
+            D51STR1, D51STR2, D51STR3, D51STR4, D51STR5, D51STR6, D51STR7,
+            D51WHL11, D51WHL12, D51WHL13, D51DEL,
         ],
         [
-            D51STR1, D51STR2, D51STR3, D51STR4, D51STR5, D51STR6, D51STR7, D51WHL21, D51WHL22,
-            D51WHL23, D51DEL,
+            D51STR1, D51STR2, D51STR3, D51STR4, D51STR5, D51STR6, D51STR7,
+            D51WHL21, D51WHL22, D51WHL23, D51DEL,
         ],
         [
-            D51STR1, D51STR2, D51STR3, D51STR4, D51STR5, D51STR6, D51STR7, D51WHL31, D51WHL32,
-            D51WHL33, D51DEL,
+            D51STR1, D51STR2, D51STR3, D51STR4, D51STR5, D51STR6, D51STR7,
+            D51WHL31, D51WHL32, D51WHL33, D51DEL,
         ],
         [
-            D51STR1, D51STR2, D51STR3, D51STR4, D51STR5, D51STR6, D51STR7, D51WHL41, D51WHL42,
-            D51WHL43, D51DEL,
+            D51STR1, D51STR2, D51STR3, D51STR4, D51STR5, D51STR6, D51STR7,
+            D51WHL41, D51WHL42, D51WHL43, D51DEL,
         ],
         [
-            D51STR1, D51STR2, D51STR3, D51STR4, D51STR5, D51STR6, D51STR7, D51WHL51, D51WHL52,
-            D51WHL53, D51DEL,
+            D51STR1, D51STR2, D51STR3, D51STR4, D51STR5, D51STR6, D51STR7,
+            D51WHL51, D51WHL52, D51WHL53, D51DEL,
         ],
         [
-            D51STR1, D51STR2, D51STR3, D51STR4, D51STR5, D51STR6, D51STR7, D51WHL61, D51WHL62,
-            D51WHL63, D51DEL,
+            D51STR1, D51STR2, D51STR3, D51STR4, D51STR5, D51STR6, D51STR7,
+            D51WHL61, D51WHL62, D51WHL63, D51DEL,
         ],
     ];
     const COAL: [&str; D51HEIGHT + 1] = [
-        COAL01, COAL02, COAL03, COAL04, COAL05, COAL06, COAL07, COAL08, COAL09, COAL10, COALDEL,
+        COAL01, COAL02, COAL03, COAL04, COAL05,
+        COAL06, COAL07, COAL08, COAL09, COAL10, COALDEL,
     ];
 
     if x < -(D51LENGTH as i32) {
@@ -181,11 +172,8 @@ fn add_d51(x: i32, options: Options) -> Result<bool> {
     };
 
     for i in 0..=(D51HEIGHT as i32) {
-        move_print(
-            x,
-            y + i,
-            D51[((D51LENGTH as i32 + x) % D51PATTERNS as i32) as usize][i as usize],
-        )?;
+        let pat = D51[((D51LENGTH as i32 + x) % D51PATTERNS as i32) as usize][i as usize];
+        move_print(x, y + i, pat)?;
         move_print(x + 53, y + i + dy, COAL[i as usize])?;
     }
 
@@ -194,41 +182,40 @@ fn add_d51(x: i32, options: Options) -> Result<bool> {
         add_man(x + 47, y + 2)?;
     }
 
-    add_smoke(x + C51FUNNEL as i32, y - 1)?;
-
+    add_smoke(x + D51FUNNEL as i32, y - 1)?;
     Ok(false)
 }
 
 fn add_c51(x: i32, options: Options) -> Result<bool> {
     const C51: [[&str; C51HEIGHT + 1]; C51PATTERNS] = [
         [
-            C51STR1, C51STR2, C51STR3, C51STR4, C51STR5, C51STR6, C51STR7, C51WH11, C51WH12,
-            C51WH13, C51WH14, C51DEL,
+            C51STR1, C51STR2, C51STR3, C51STR4, C51STR5, C51STR6, C51STR7,
+            C51WH11, C51WH12, C51WH13, C51WH14, C51DEL,
         ],
         [
-            C51STR1, C51STR2, C51STR3, C51STR4, C51STR5, C51STR6, C51STR7, C51WH21, C51WH22,
-            C51WH23, C51WH24, C51DEL,
+            C51STR1, C51STR2, C51STR3, C51STR4, C51STR5, C51STR6, C51STR7,
+            C51WH21, C51WH22, C51WH23, C51WH24, C51DEL,
         ],
         [
-            C51STR1, C51STR2, C51STR3, C51STR4, C51STR5, C51STR6, C51STR7, C51WH31, C51WH32,
-            C51WH33, C51WH34, C51DEL,
+            C51STR1, C51STR2, C51STR3, C51STR4, C51STR5, C51STR6, C51STR7,
+            C51WH31, C51WH32, C51WH33, C51WH34, C51DEL,
         ],
         [
-            C51STR1, C51STR2, C51STR3, C51STR4, C51STR5, C51STR6, C51STR7, C51WH41, C51WH42,
-            C51WH43, C51WH44, C51DEL,
+            C51STR1, C51STR2, C51STR3, C51STR4, C51STR5, C51STR6, C51STR7,
+            C51WH41, C51WH42, C51WH43, C51WH44, C51DEL,
         ],
         [
-            C51STR1, C51STR2, C51STR3, C51STR4, C51STR5, C51STR6, C51STR7, C51WH51, C51WH52,
-            C51WH53, C51WH54, C51DEL,
+            C51STR1, C51STR2, C51STR3, C51STR4, C51STR5, C51STR6, C51STR7,
+            C51WH51, C51WH52, C51WH53, C51WH54, C51DEL,
         ],
         [
-            C51STR1, C51STR2, C51STR3, C51STR4, C51STR5, C51STR6, C51STR7, C51WH61, C51WH62,
-            C51WH63, C51WH64, C51DEL,
+            C51STR1, C51STR2, C51STR3, C51STR4, C51STR5, C51STR6, C51STR7,
+            C51WH61, C51WH62, C51WH63, C51WH64, C51DEL,
         ],
     ];
     const COAL: [&str; C51HEIGHT + 1] = [
-        COALDEL, COAL01, COAL02, COAL03, COAL04, COAL05, COAL06, COAL07, COAL08, COAL09, COAL10,
-        COALDEL,
+        COALDEL, COAL01, COAL02, COAL03, COAL04, COAL05,
+        COAL06, COAL07, COAL08, COAL09, COAL10, COALDEL,
     ];
 
     if x < -(C51LENGTH as i32) {
@@ -247,11 +234,8 @@ fn add_c51(x: i32, options: Options) -> Result<bool> {
     };
 
     for i in 0..=(C51HEIGHT as i32) {
-        move_print(
-            x,
-            y + i,
-            C51[((C51LENGTH as i32 + x) % C51PATTERNS as i32) as usize][i as usize],
-        )?;
+        let pat = C51[((C51LENGTH as i32 + x) % C51PATTERNS as i32) as usize][i as usize];
+        move_print(x, y + i, pat)?;
         move_print(x + 55, y + i + dy, COAL[i as usize])?;
     }
 
@@ -261,7 +245,6 @@ fn add_c51(x: i32, options: Options) -> Result<bool> {
     }
 
     add_smoke(x + C51FUNNEL as i32, y - 1)?;
-
     Ok(false)
 }
 
@@ -269,18 +252,14 @@ fn add_man(x: i32, y: i32) -> Result<()> {
     const MAN: [[&str; 2]; 2] = [["", "(O)"], ["Help!", "\\O/"]];
 
     for i in 0..2 {
-        move_print(
-            x,
-            y + i,
-            MAN[((LOGOLENGTH as i32 + x) / 12 % 2) as usize][i as usize],
-        )?;
+        let pat = MAN[((LOGOLENGTH as i32 + x) / 12 % 2) as usize][i as usize];
+        move_print(x, y + i, pat)?;
     }
-
     Ok(())
 }
 
 fn add_smoke(x: i32, y: i32) -> Result<()> {
-    #[derive(Default, Clone, Copy)]
+    #[derive(Clone, Copy)]
     struct Smokes {
         x: i32,
         y: i32,
@@ -290,29 +269,30 @@ fn add_smoke(x: i32, y: i32) -> Result<()> {
 
     impl Smokes {
         const fn new() -> Smokes {
-            Smokes {
-                x: 0,
-                y: 0,
-                ptrn: 0,
-                kind: 0,
-            }
+            Smokes { x: 0, y: 0, ptrn: 0, kind: 0 }
         }
     }
 
     const SMOKEPTNS: usize = 16;
     const SMOKE: [[&str; SMOKEPTNS]; 2] = [
         [
-            "(   )", "(    )", "(    )", "(   )", "(  )", "(  )", "( )", "( )", "()", "()", "O",
-            "O", "O", "O", "O", " ",
+            "(   )", "(    )", "(    )", "(   )", "(  )",
+            "(  )" , "( )"   , "( )"   , "()"   , "()"  ,
+            "O"    , "O"     , "O"     , "O"    , "O"   ,
+            " "    ,
         ],
         [
-            "(@@@)", "(@@@@)", "(@@@@)", "(@@@)", "(@@)", "(@@)", "(@)", "(@)", "@@", "@@", "@",
-            "@", "@", "@", "@", " ",
+            "(@@@)", "(@@@@)", "(@@@@)", "(@@@)", "(@@)",
+            "(@@)" , "(@)"   , "(@)"   , "@@"   , "@@"  ,
+            "@"    , "@"     , "@"     , "@"    , "@"   ,
+            " "    ,
         ],
     ];
     const ERASER: [&str; SMOKEPTNS] = [
-        "     ", "      ", "      ", "     ", "    ", "    ", "   ", "   ", "  ", "  ", " ", " ",
-        " ", " ", " ", " ",
+        "     ", "      ", "      ", "     ", "    ",
+        "    " , "   "   , "   "   , "  "   , "  "  ,
+        " "    , " "     , " "     , " "    , " "   ,
+        " "    ,
     ];
     const DY: [i32; SMOKEPTNS] = [2, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     const DX: [i32; SMOKEPTNS] = [-2, -1, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3];
@@ -344,6 +324,5 @@ fn add_smoke(x: i32, y: i32) -> Result<()> {
             SUM += 1;
         }
     }
-
     Ok(())
 }

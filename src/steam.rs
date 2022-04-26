@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 pub(crate) const D51HEIGHT: usize = 10;
 pub(crate) const D51FUNNEL: usize = 7;
 pub(crate) const D51LENGTH: usize = 83;
