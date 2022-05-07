@@ -1,9 +1,57 @@
+//! # Rust SL
+//! 
+//! A rust port of [sl](https://github.com/mtoyoda/sl).
+//! SL (Steam Locomotive) runs across your terminal when you type "sl" as you meant to type "ls". It's just a joke command, and not useful at all.
+//! 
+//! ## Installing
+//! 
+//! ### Using [Scoop](https://scoop.sh/)
+//! 
+//! ```PowerShell
+//! scoop bucket add siku https://github.com/amorphobia/siku
+//! scoop install rust-sl
+//! ```
+//! 
+//! ### Prebuilt Binaries
+//! 
+//! Find and download from [release page](https://github.com/amorphobia/rust-sl/releases).
+//! 
+//! ## Usage
+//! 
+//! ```PowerShell
+//! sl [OPTIONS]
+//! ```
+//! 
+//! ## Options
+//! 
+//! ```text
+//! -a            An accident is occurring. People cry for help
+//! -c            C51 appears instead of D51
+//! -F            It flies like the galaxy express 999
+//! -h, --help    Print help information
+//! -l            Little version
+//! ```
+//! 
+//! ## License
+//! 
+//! The original code was written in c by Toyoda Masashi. See [Original License](#original-license-c-version) below.
+//! The modified (rust) code is opensourced under [AGPL-3.0](https://github.com/amorphobia/rust-sl/blob/master/LICENSE).
+//! 
+//! ## Original License (c version)
+//! 
+//! Copyright 1993,1998,2014 Toyoda Masashi (mtoyoda@acm.org)
+//! 
+//! Everyone is permitted to do anything on this program including copying,
+//! modifying, and improving, unless you try to pretend that you wrote it.
+//! i.e., the above copyright notice has to appear in all copies.
+//! THE AUTHOR DISCLAIMS ANY RESPONSIBILITY WITH REGARD TO THIS SOFTWARE.
+
 use clap::Parser;
 use crossterm::{
     cursor::{Hide, MoveTo, RestorePosition, SavePosition, Show},
     execute,
     style::Print,
-    terminal::{size, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{size, EnterAlternateScreen, LeaveAlternateScreen},
     Result,
 };
 use std::{io::stdout, thread, time, sync::{Arc, Mutex}};
@@ -11,6 +59,7 @@ use std::{io::stdout, thread, time, sync::{Arc, Mutex}};
 mod steam;
 use steam::*;
 
+#[doc(hidden)]
 fn move_print(x: i32, y: i32, pat: &str) -> Result<()> {
     use std::cmp::{max, min};
 
@@ -32,6 +81,7 @@ fn move_print(x: i32, y: i32, pat: &str) -> Result<()> {
     Ok(())
 }
 
+#[doc(hidden)]
 #[derive(Parser, Clone, Copy)]
 struct Options {
     /// An accident is occurring. People cry for help.
@@ -51,6 +101,7 @@ struct Options {
     c51: bool,
 }
 
+#[doc(hidden)]
 fn main() -> Result<()> {
     let (cols, _) = size()?;
     let options = Options::parse();
@@ -62,16 +113,8 @@ fn main() -> Result<()> {
     let state = Arc::clone(&running);
     ctrlc::set_handler(move || {
         *state.lock().expect("Running state error.") = false;
-        execute!(
-            stdout(),
-            Clear(ClearType::All),
-            RestorePosition,
-            Show,
-            LeaveAlternateScreen
-        )
-        .expect("Error handling Ctrl-C");
     })
-    .expect("Error setting Ctrl-C handler");
+    .expect("Setting Ctrl-C handler failed.");
 
     let mut x = cols as i32 - 1;
     while *running.lock().expect("Running state error.") {
@@ -91,6 +134,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+#[doc(hidden)]
 fn add_sl(x: i32, options: Options) -> Result<bool> {
     const SL: [[&str; LOGOHEIGHT + 1]; LOGOPATTERNS] = [
         [LOGO1, LOGO2, LOGO3, LOGO4, LWHL11, LWHL12, DELLN],
@@ -140,6 +184,7 @@ fn add_sl(x: i32, options: Options) -> Result<bool> {
     Ok(false)
 }
 
+#[doc(hidden)]
 fn add_d51(x: i32, options: Options) -> Result<bool> {
     const D51: [[&str; D51HEIGHT + 1]; D51PATTERNS] = [
         [
@@ -202,6 +247,7 @@ fn add_d51(x: i32, options: Options) -> Result<bool> {
     Ok(false)
 }
 
+#[doc(hidden)]
 fn add_c51(x: i32, options: Options) -> Result<bool> {
     const C51: [[&str; C51HEIGHT + 1]; C51PATTERNS] = [
         [
@@ -264,6 +310,7 @@ fn add_c51(x: i32, options: Options) -> Result<bool> {
     Ok(false)
 }
 
+#[doc(hidden)]
 fn add_man(x: i32, y: i32) -> Result<()> {
     const MAN: [[&str; 2]; 2] = [["", "(O)"], ["Help!", "\\O/"]];
 
@@ -274,7 +321,10 @@ fn add_man(x: i32, y: i32) -> Result<()> {
     Ok(())
 }
 
+#[doc(hidden)]
 fn add_smoke(x: i32, y: i32) -> Result<()> {
+    use lazy_static::lazy_static;
+
     #[derive(Clone, Copy)]
     struct Smokes {
         x: i32,
@@ -313,32 +363,31 @@ fn add_smoke(x: i32, y: i32) -> Result<()> {
     const DY: [i32; SMOKEPTNS] = [2, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     const DX: [i32; SMOKEPTNS] = [-2, -1, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3];
 
-    static mut S: [Smokes; 1000] = [Smokes::new(); 1000];
-    static mut SUM: usize = 0;
+    lazy_static! {
+        static ref S: Mutex<[Smokes; 1000]> = Mutex::new([Smokes::new(); 1000]);
+        static ref SUM: Mutex<usize> = Mutex::new(0);
+    }
 
     if x % 4 == 0 {
-        let sum = unsafe { SUM };
+        let sum = *SUM.lock().expect("Accessing global static SUM failed.");
+        let mut smokes = S.lock().expect("Accessing global static S failed.");
         for i in 0..sum {
-            let smoke = unsafe { S[i] };
+            let smoke = &mut smokes[i];
             move_print(smoke.x, smoke.y, ERASER[smoke.ptrn])?;
-            unsafe {
-                S[i].y -= DY[S[i].ptrn] as i32;
-                S[i].x += DX[S[i].ptrn] as i32;
-                S[i].ptrn += if S[i].ptrn < SMOKEPTNS - 1 { 1 } else { 0 };
-            }
-            let smoke = unsafe { S[i] };
+            smoke.y -= DY[smoke.ptrn] as i32;
+            smoke.x += DX[smoke.ptrn] as i32;
+            smoke.ptrn += if smoke.ptrn < SMOKEPTNS - 1 { 1 } else { 0 };
             move_print(smoke.x, smoke.y, SMOKE[smoke.kind][smoke.ptrn])?;
         }
 
         move_print(x, y, SMOKE[sum % 2][0])?;
 
-        unsafe {
-            S[sum].y = y as i32;
-            S[sum].x = x as i32;
-            S[sum].ptrn = 0;
-            S[sum].kind = sum % 2;
-            SUM += 1;
-        }
+        let smoke = &mut smokes[sum];
+        smoke.y = y as i32;
+        smoke.x = x as i32;
+        smoke.ptrn = 0;
+        smoke.kind = sum % 2;
+        *SUM.lock().expect("Accessing global static SUM failed.") += 1;
     }
     Ok(())
 }
