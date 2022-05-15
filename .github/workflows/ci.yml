@@ -42,8 +42,11 @@ jobs:
           command: build
           args: --target ${{ matrix.target }} --release --verbose
 
+      - name: Copy output
+        run: cp target/${{ matrix.target }}/release/${{ matrix.output }} ${{ matrix.output }}
+
       - name: Create archive
-        run: tar.exe -a -c -f rust-sl-${{ matrix.target }}.zip target/${{ matrix.target }}/release/${{ matrix.output }}
+        run: tar.exe -a -c -f rust-sl-${{ matrix.target }}.zip ${{ matrix.output }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v1
