@@ -1,0 +1,62 @@
+name Rust
+
+on:
+  push:
+    branches: [ master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: i686-pc-windows-msvc
+            os: windows-latest
+            output: sl.exe
+            archive: zip
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            output: sl.exe
+            archive: zip
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+
+      - name: Build release
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --target ${{ matrix.target }} --release --verbose
+
+      - name: Create archive
+        run: tar.exe -a -c -f rust-sl-${{ matrix.target }}.zip target/${{ matrix.target }}/release/${{ matrix.output }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: rust-sl-${{ matrix.target }}.${{ matrix.archive }}
+          path: rust-sl-${{ matrix.target }}.${{ matrix.archive }}
+
+      - name: Upload binary to release
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: rust-sl-${{ matrix.target }}.${{ matrix.archive }}
+          asset_name: rust-sl-${{ matrix.target }}.${{ matrix.archive }}
+          tag: ${{ github.ref }}
+          overwrite: true
