@@ -122,9 +122,7 @@ fn main() -> Result<()> {
             if add_sl(x, options)? { break; }
         } else if options.c51 {
             if add_c51(x, options)? { break; }
-        } else {
-            if add_d51(x, options)? { break; }
-        }
+        } else if add_d51(x, options)? { break; }
 
         thread::sleep(time::Duration::from_millis(40));
         x -= 1;

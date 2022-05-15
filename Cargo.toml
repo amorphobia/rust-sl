@@ -6,7 +6,7 @@ homepage = "https://docs.rs/crate/rust-sl/latest"
 license = "AGPL-3.0-or-later"
 name = "rust-sl"
 repository = "https://github.com/amorphobia/rust-sl"
-version = "0.2.0"
+version = "0.2.1"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -22,3 +22,13 @@ panic = 'abort'
 [[bin]]
 name = "sl"
 path = "src/main.rs"
+
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/v{ version }/{ name }-{ target }.{ archive-format }"
+bin-dir = "{ bin }{ binary-ext }"
+
+[package.metadata.binstall.overrides.i686-pc-windows-msvc]
+pkg-fmt = "zip"
+
+[package.metadata.binstall.overrides.x86_64-pc-windows-msvc]
+pkg-fmt = "zip"
