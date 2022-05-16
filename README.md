@@ -12,6 +12,12 @@ scoop bucket add siku https://github.com/amorphobia/siku
 scoop install rust-sl
 ```
 
+### Using [cargo-binstall](https://crates.io/crates/cargo-binstall)
+
+```Shell
+cargo binstall rust-sl
+```
+
 ### Prebuilt Binaries
 
 Find and download from [release page](https://github.com/amorphobia/rust-sl/releases).
