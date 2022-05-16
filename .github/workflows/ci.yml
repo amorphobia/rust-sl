@@ -23,6 +23,10 @@ jobs:
             os: windows-latest
             output: sl.exe
             archive: zip
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            output: sl
+            archive: zip
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             output: sl.exe
@@ -45,8 +49,13 @@ jobs:
       - name: Copy output
         run: cp target/${{ matrix.target }}/release/${{ matrix.output }} ${{ matrix.output }}
 
-      - name: Create archive
+      - name: Create archive (zip, windows)
+        if: ${{ matrix.os == 'windows-latest' }}
         run: tar.exe -a -c -f rust-sl-${{ matrix.target }}.zip ${{ matrix.output }}
+
+      - name: Create archive (zip, macos)
+        if: ${{ matrix.os == 'macos-latest' }}
+        run: zip rust-sl-${{ matrix.target }}.zip ${{ matrix.output }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v1
