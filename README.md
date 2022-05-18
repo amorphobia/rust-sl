@@ -24,18 +24,19 @@ Find and download from [release page](https://github.com/amorphobia/rust-sl/rele
 
 ## Usage
 
-```PowerShell
+```Shell
 sl [OPTIONS]
 ```
 
 ## Options
 
 ```text
--a            An accident is occurring. People cry for help
--c            C51 appears instead of D51
--F            It flies like the galaxy express 999
--h, --help    Print help information
--l            Little version
+-a, --accident    An accident is occurring. People cry for help
+-c, --C51         C51 appears instead of D51
+-F, --fly         It flies like the galaxy express 999
+-h, --help        Print help information
+-l, --little      Little version
+-V, --version     Print version information
 ```
 
 ## License

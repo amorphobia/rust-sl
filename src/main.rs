@@ -1,52 +1,53 @@
 //! # Rust SL
-//! 
+//!
 //! A rust port of [sl](https://github.com/mtoyoda/sl).
 //! SL (Steam Locomotive) runs across your terminal when you type "sl" as you meant to type "ls". It's just a joke command, and not useful at all.
-//! 
+//!
 //! ## Installing
-//! 
+//!
 //! ### Using [Scoop](https://scoop.sh/)
-//! 
+//!
 //! ```PowerShell
 //! scoop bucket add siku https://github.com/amorphobia/siku
 //! scoop install rust-sl
 //! ```
-//! 
+//!
 //! ### Using [cargo-binstall](https://crates.io/crates/cargo-binstall)
-//! 
+//!
 //! ```Shell
 //! cargo binstall rust-sl
 //! ```
-//! 
+//!
 //! ### Prebuilt Binaries
-//! 
+//!
 //! Find and download from [release page](https://github.com/amorphobia/rust-sl/releases).
-//! 
+//!
 //! ## Usage
-//! 
-//! ```PowerShell
+//!
+//! ```Shell
 //! sl [OPTIONS]
 //! ```
-//! 
+//!
 //! ## Options
-//! 
+//!
 //! ```text
-//! -a            An accident is occurring. People cry for help
-//! -c            C51 appears instead of D51
-//! -F            It flies like the galaxy express 999
-//! -h, --help    Print help information
-//! -l            Little version
+//! -a, --accident    An accident is occurring. People cry for help
+//! -c, --C51         C51 appears instead of D51
+//! -F, --fly         It flies like the galaxy express 999
+//! -h, --help        Print help information
+//! -l, --little      Little version
+//! -V, --version     Print version information
 //! ```
-//! 
+//!
 //! ## License
-//! 
+//!
 //! The original code was written in c by Toyoda Masashi. See [Original License](#original-license-c-version) below.
 //! The modified (rust) code is opensourced under [AGPL-3.0](https://github.com/amorphobia/rust-sl/blob/master/LICENSE).
-//! 
+//!
 //! ## Original License (c version)
-//! 
+//!
 //! Copyright 1993,1998,2014 Toyoda Masashi (mtoyoda@acm.org)
-//! 
+//!
 //! Everyone is permitted to do anything on this program including copying,
 //! modifying, and improving, unless you try to pretend that you wrote it.
 //! i.e., the above copyright notice has to appear in all copies.
@@ -60,12 +61,18 @@ use crossterm::{
     terminal::{size, EnterAlternateScreen, LeaveAlternateScreen},
     Result,
 };
-use std::{io::stdout, thread, time, sync::{Arc, Mutex}};
+use std::{
+    io::stdout,
+    sync::{
+        atomic::{self, AtomicBool, AtomicUsize},
+        Arc, Mutex,
+    },
+    thread, time,
+};
 
 mod steam;
 use steam::*;
 
-#[doc(hidden)]
 fn move_print(x: i32, y: i32, pat: &str) -> Result<()> {
     use std::cmp::{max, min};
 
@@ -87,48 +94,53 @@ fn move_print(x: i32, y: i32, pat: &str) -> Result<()> {
     Ok(())
 }
 
-#[doc(hidden)]
 #[derive(Parser, Clone, Copy)]
+#[clap(author, version, about)]
 struct Options {
     /// An accident is occurring. People cry for help.
-    #[clap(short)]
+    #[clap(short, long)]
     accident: bool,
 
     /// It flies like the galaxy express 999.
-    #[clap(short = 'F')]
+    #[clap(short = 'F', long)]
     fly: bool,
 
     /// Little version.
-    #[clap(short)]
+    #[clap(short, long = "little")]
     logo: bool,
 
     /// C51 appears instead of D51.
-    #[clap(short)]
+    #[clap(short, long = "C51")]
     c51: bool,
 }
 
-#[doc(hidden)]
 fn main() -> Result<()> {
     let (cols, _) = size()?;
     let options = Options::parse();
 
     execute!(stdout(), EnterAlternateScreen, Hide, SavePosition)?;
 
-    let running = Arc::new(Mutex::new(true));
+    let running = Arc::new(AtomicBool::new(true));
 
     let state = Arc::clone(&running);
     ctrlc::set_handler(move || {
-        *state.lock().expect("Running state error.") = false;
+        state.store(false, atomic::Ordering::Relaxed);
     })
     .expect("Setting Ctrl-C handler failed.");
 
     let mut x = cols as i32 - 1;
-    while *running.lock().expect("Running state error.") {
+    while running.load(atomic::Ordering::Relaxed) {
         if options.logo {
-            if add_sl(x, options)? { break; }
+            if add_sl(x, options)? {
+                break;
+            }
         } else if options.c51 {
-            if add_c51(x, options)? { break; }
-        } else if add_d51(x, options)? { break; }
+            if add_c51(x, options)? {
+                break;
+            }
+        } else if add_d51(x, options)? {
+            break;
+        }
 
         thread::sleep(time::Duration::from_millis(40));
         x -= 1;
@@ -138,7 +150,6 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-#[doc(hidden)]
 fn add_sl(x: i32, options: Options) -> Result<bool> {
     const SL: [[&str; LOGOHEIGHT + 1]; LOGOPATTERNS] = [
         [LOGO1, LOGO2, LOGO3, LOGO4, LWHL11, LWHL12, DELLN],
@@ -188,7 +199,6 @@ fn add_sl(x: i32, options: Options) -> Result<bool> {
     Ok(false)
 }
 
-#[doc(hidden)]
 fn add_d51(x: i32, options: Options) -> Result<bool> {
     const D51: [[&str; D51HEIGHT + 1]; D51PATTERNS] = [
         [
@@ -251,7 +261,6 @@ fn add_d51(x: i32, options: Options) -> Result<bool> {
     Ok(false)
 }
 
-#[doc(hidden)]
 fn add_c51(x: i32, options: Options) -> Result<bool> {
     const C51: [[&str; C51HEIGHT + 1]; C51PATTERNS] = [
         [
@@ -314,7 +323,6 @@ fn add_c51(x: i32, options: Options) -> Result<bool> {
     Ok(false)
 }
 
-#[doc(hidden)]
 fn add_man(x: i32, y: i32) -> Result<()> {
     const MAN: [[&str; 2]; 2] = [["", "(O)"], ["Help!", "\\O/"]];
 
@@ -325,7 +333,6 @@ fn add_man(x: i32, y: i32) -> Result<()> {
     Ok(())
 }
 
-#[doc(hidden)]
 fn add_smoke(x: i32, y: i32) -> Result<()> {
     use lazy_static::lazy_static;
 
@@ -338,8 +345,8 @@ fn add_smoke(x: i32, y: i32) -> Result<()> {
     }
 
     impl Smokes {
-        const fn new() -> Smokes {
-            Smokes { x: 0, y: 0, ptrn: 0, kind: 0 }
+        const fn new() -> Self {
+            Self { x: 0, y: 0, ptrn: 0, kind: 0 }
         }
     }
 
@@ -369,11 +376,11 @@ fn add_smoke(x: i32, y: i32) -> Result<()> {
 
     lazy_static! {
         static ref S: Mutex<[Smokes; 1000]> = Mutex::new([Smokes::new(); 1000]);
-        static ref SUM: Mutex<usize> = Mutex::new(0);
+        static ref SUM: AtomicUsize = AtomicUsize::new(0);
     }
 
     if x % 4 == 0 {
-        let sum = *SUM.lock().expect("Accessing global static SUM failed.");
+        let sum = SUM.load(atomic::Ordering::Relaxed);
         let mut smokes = S.lock().expect("Accessing global static S failed.");
         for i in 0..sum {
             let smoke = &mut smokes[i];
@@ -391,7 +398,7 @@ fn add_smoke(x: i32, y: i32) -> Result<()> {
         smoke.x = x as i32;
         smoke.ptrn = 0;
         smoke.kind = sum % 2;
-        *SUM.lock().expect("Accessing global static SUM failed.") += 1;
+        SUM.fetch_add(1, atomic::Ordering::Relaxed);
     }
     Ok(())
 }
